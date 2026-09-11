@@ -308,6 +308,17 @@ const BookingPage = () => {
     }
   };
 
+  const handlePaymentModalClose = async () => {
+    setIsUpiModalOpen(false);
+    if (upiOrder?.bookingReference) {
+      try {
+        await bookingService.cancel(upiOrder.bookingReference);
+      } catch {
+        // Silently handle if already cancelled
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -760,7 +771,7 @@ const BookingPage = () => {
       {/* UPI Payment Gateway Modal */}
       <UpiPaymentModal
         isOpen={isUpiModalOpen}
-        onClose={() => setIsUpiModalOpen(false)}
+        onClose={handlePaymentModalClose}
         order={upiOrder}
         onPaymentSuccess={handlePaymentSuccess}
       />

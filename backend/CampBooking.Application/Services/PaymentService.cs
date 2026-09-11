@@ -242,11 +242,14 @@ public class PaymentService : IPaymentService
             throw new UnauthorizedAccessException("Not authorized to view payment status");
         }
 
+        var isUnpaidPending = (booking.Status == BookingStatus.PendingPayment || (int)booking.Status == 0)
+                              && booking.PaymentStatus != PaymentStatus.Completed;
+
         return new PaymentStatusDto
         {
             BookingReference = booking.BookingReference,
-            Status = booking.Status.ToString(),
-            PaymentStatus = booking.PaymentStatus.ToString(),
+            Status = isUnpaidPending ? BookingStatus.Cancelled.ToString() : booking.Status.ToString(),
+            PaymentStatus = isUnpaidPending ? PaymentStatus.Failed.ToString() : booking.PaymentStatus.ToString(),
             PaymentMethod = booking.PaymentMethod,
             PaymentTransactionId = booking.PaymentTransactionId,
             Amount = booking.TotalAmount,

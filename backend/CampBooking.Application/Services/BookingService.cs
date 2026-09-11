@@ -234,18 +234,21 @@ public class BookingService : IBookingService
             throw new InvalidOperationException("This booking has already been cancelled");
         }
 
-        // Camp check-in starts at 12:00 PM (noon) on check-in date. Once started, booking cannot be cancelled.
-        var checkInStart = new DateTimeOffset(booking.CheckInDate.Date.AddHours(12), TimeZoneInfo.Local.GetUtcOffset(booking.CheckInDate.Date));
-        if (DateTimeOffset.Now >= checkInStart)
+        if (booking.Status != BookingStatus.PendingPayment)
         {
-            throw new InvalidOperationException("Cannot cancel a booking after camp check-in time has started (12:00 PM on check-in date)");
-        }
+            // Camp check-in starts at 12:00 PM (noon) on check-in date. Once started, booking cannot be cancelled.
+            var checkInStart = new DateTimeOffset(booking.CheckInDate.Date.AddHours(12), TimeZoneInfo.Local.GetUtcOffset(booking.CheckInDate.Date));
+            if (DateTimeOffset.Now >= checkInStart)
+            {
+                throw new InvalidOperationException("Cannot cancel a booking after camp check-in time has started (12:00 PM on check-in date)");
+            }
 
-        // Regular users must cancel up to 1 hour before noon check-in (11:00 AM on check-in date)
-        var userCancelDeadline = new DateTimeOffset(booking.CheckInDate.Date.AddHours(11), TimeZoneInfo.Local.GetUtcOffset(booking.CheckInDate.Date));
-        if (!isAdmin && DateTimeOffset.Now >= userCancelDeadline)
-        {
-            throw new InvalidOperationException("Cancellation is allowed only up to 1 hour before noon check-in (11:00 AM)");
+            // Regular users must cancel up to 1 hour before noon check-in (11:00 AM on check-in date)
+            var userCancelDeadline = new DateTimeOffset(booking.CheckInDate.Date.AddHours(11), TimeZoneInfo.Local.GetUtcOffset(booking.CheckInDate.Date));
+            if (!isAdmin && DateTimeOffset.Now >= userCancelDeadline)
+            {
+                throw new InvalidOperationException("Cancellation is allowed only up to 1 hour before noon check-in (11:00 AM)");
+            }
         }
 
         booking.Status = BookingStatus.Cancelled;
@@ -269,7 +272,7 @@ public class BookingService : IBookingService
             throw new UnauthorizedAccessException("You can only remove your own booking");
         }
 
-        if (booking.Status != BookingStatus.Cancelled)
+        if (booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.PendingPayment)
         {
             throw new InvalidOperationException("Please cancel the booking before removing it");
         }
@@ -315,6 +318,13 @@ public class BookingService : IBookingService
 
     private static BookingDto MapToDto(Booking booking)
     {
+        // Incomplete / unpaid bookings cannot be revisited for payment, so treat them as Cancelled
+        var isUnpaidPending = (booking.Status == BookingStatus.PendingPayment || (int)booking.Status == 0)
+                              && booking.PaymentStatus != PaymentStatus.Completed;
+
+        var displayStatus = isUnpaidPending ? BookingStatus.Cancelled.ToString() : booking.Status.ToString();
+        var displayPaymentStatus = isUnpaidPending ? PaymentStatus.Failed.ToString() : booking.PaymentStatus.ToString();
+
         return new BookingDto
         {
             Id = booking.Id,
@@ -337,13 +347,13 @@ public class BookingService : IBookingService
             TotalAmount = booking.TotalAmount,
             BillingAddress = booking.BillingAddress,
             CellPhone = booking.CellPhone,
-            Status = booking.Status.ToString(),
-            PaymentStatus = booking.PaymentStatus.ToString(),
+            Status = displayStatus,
+            PaymentStatus = displayPaymentStatus,
             PaymentMethod = booking.PaymentMethod,
             PaymentTransactionId = booking.PaymentTransactionId,
             PaidAt = booking.PaidAt,
             CreatedAt = booking.CreatedAt,
-            CancelledAt = booking.CancelledAt,
+            CancelledAt = booking.CancelledAt ?? (isUnpaidPending ? booking.CreatedAt : null),
             Rating = booking.Rating != null ? new RatingDto
             {
                 Id = booking.Rating.Id,
