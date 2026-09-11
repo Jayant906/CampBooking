@@ -1,0 +1,13 @@
+{
+  "name": "campbooking-fullstack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CampBooking Full-Stack Application",
+  "scripts": {
+    "dev": "start.bat",
+    "start": "start.bat",
+    "stop": "stop.bat",
+    "backend": "dotnet run --project backend/CampBooking.API/CampBooking.API.csproj --urls \"http://localhost:5007\"",
+    "frontend": "npm --prefix frontend run dev"
+  }
+}
