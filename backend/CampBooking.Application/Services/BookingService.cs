@@ -146,9 +146,9 @@ public class BookingService : IBookingService
             PaymentStatus = !string.IsNullOrWhiteSpace(createDto.PaymentTransactionId) ? PaymentStatus.Completed : PaymentStatus.Pending,
             PaymentMethod = createDto.PaymentMethod ?? "UPI",
             PaymentTransactionId = createDto.PaymentTransactionId,
-            PaidAt = !string.IsNullOrWhiteSpace(createDto.PaymentTransactionId) ? DateTime.UtcNow : null,
+            PaidAt = !string.IsNullOrWhiteSpace(createDto.PaymentTransactionId) ? DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) : null,
             Status = BookingStatus.Confirmed,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
         var campLock = CampBookingLocks.GetOrAdd(createDto.CampId, _ => new SemaphoreSlim(1, 1));
@@ -249,7 +249,7 @@ public class BookingService : IBookingService
         }
 
         booking.Status = BookingStatus.Cancelled;
-        booking.CancelledAt = DateTime.UtcNow;
+        booking.CancelledAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         await _bookingRepository.UpdateAsync(booking);
 

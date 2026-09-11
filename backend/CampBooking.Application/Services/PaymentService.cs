@@ -103,7 +103,7 @@ public class PaymentService : IPaymentService
             PaymentMethod = "UPI",
             PaymentOrderId = orderId,
             Status = BookingStatus.PendingPayment,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
         await _bookingRepository.AddAsync(booking);
@@ -167,7 +167,7 @@ public class PaymentService : IPaymentService
         booking.Status = BookingStatus.Confirmed;
         booking.PaymentMethod = verifyDto.PaymentMethod ?? "UPI";
         booking.PaymentTransactionId = utr;
-        booking.PaidAt = DateTime.UtcNow;
+        booking.PaidAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         await _bookingRepository.UpdateAsync(booking);
 

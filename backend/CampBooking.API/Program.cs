@@ -16,6 +16,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using CampBooking.API.Middleware;
+// Enable Npgsql legacy timestamp behavior to allow writing UTC DateTimes to timestamp without time zone columns
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var projectRootFromBin = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
 var hasProjectFile = File.Exists(Path.Combine(projectRootFromBin, "CampBooking.API.csproj"));
