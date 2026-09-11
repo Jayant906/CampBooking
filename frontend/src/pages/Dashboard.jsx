@@ -6,7 +6,7 @@ import { bookingService } from '../services/bookingService';
 import { campService } from '../services/campService';
 import CampCard from '../components/Camp/CampCard';
 import Pagination from '../components/Common/Pagination';
-import { resolveImageUrl } from '../services/imageUrl';
+import { resolveImageUrl, DEFAULT_CAMP_IMAGE } from '../services/imageUrl';
 
 // ============ DATE UTILITY FUNCTIONS ============
 // Convert Date object to "YYYY-MM-DD" format for HTML input[type="date"]
@@ -284,7 +284,7 @@ const Dashboard = () => {
         id: camp.id,
         name: camp.name,
         location: camp.location,
-        img: resolveImageUrl(camp.imageUrl, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400'),  // Fallback image
+        img: resolveImageUrl(camp.imageUrl, DEFAULT_CAMP_IMAGE),  // Fallback image
       }));
   }, [allCamps, camps]);
 
@@ -501,7 +501,18 @@ const Dashboard = () => {
                   className="group cursor-pointer text-left w-[78vw] max-w-[320px] sm:w-[300px] md:w-[280px] lg:w-[300px] flex-shrink-0 snap-start"
                 >
                   <div className="relative h-56 sm:h-60 md:h-64 rounded-2xl overflow-hidden bg-[var(--color-sand)] dark:bg-[#333]">
-                    <img src={trip.img} alt={trip.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />
+                    <img
+                      src={trip.img}
+                      alt={trip.name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                      onError={(e) => {
+                        if (e.currentTarget.src !== DEFAULT_CAMP_IMAGE) {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = DEFAULT_CAMP_IMAGE;
+                        }
+                      }}
+                    />
                     <div className="image-text-overlay" />
                     <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
                       <h3 className="image-text-title font-semibold text-base md:text-lg leading-tight line-clamp-1">{trip.name}</h3>

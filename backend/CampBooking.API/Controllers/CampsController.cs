@@ -155,4 +155,36 @@ public class CampsController : ControllerBase
             return StatusCode(500, ApiResponse<string>.FailureResponse($"Error uploading file: {ex.Message}"));
         }
     }
+
+    /// <summary>
+    /// Resilient image serving endpoint.
+    /// Returns the uploaded file if present on server disk;
+    /// if missing (e.g. wiped on ephemeral container restart), redirects to high quality nature camp image so frontend never crashes.
+    /// </summary>
+    [HttpGet("/uploads/camps/{fileName}")]
+    [AllowAnonymous]
+    public IActionResult GetCampImage(string fileName)
+    {
+        var safeFileName = Path.GetFileName(fileName);
+        var webRootPath = _environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+        var filePath = Path.Combine(webRootPath, "uploads", "camps", safeFileName);
+
+        if (System.IO.File.Exists(filePath))
+        {
+            var ext = Path.GetExtension(safeFileName).ToLowerInvariant();
+            var contentType = ext switch
+            {
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".webp" => "image/webp",
+                _ => "image/jpeg"
+            };
+            Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            return PhysicalFile(filePath, contentType);
+        }
+
+        // File missing on ephemeral container storage -> redirect to reliable nature camp fallback image
+        return Redirect("https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80");
+    }
 }
+

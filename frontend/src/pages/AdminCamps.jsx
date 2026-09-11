@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { campService } from '../services/campService';
-import { resolveImageUrl } from '../services/imageUrl';
+import { resolveImageUrl, DEFAULT_CAMP_IMAGE } from '../services/imageUrl';
 import ConfirmDialog from '../components/UI/ConfirmDialog';
 
 // Utility functions to handle image URLs and amenities formatting
@@ -148,6 +148,10 @@ const AdminCamps = () => {
       return;
     }
 
+    // Create instant local blob preview for immediate feedback
+    const localBlobUrl = URL.createObjectURL(file);
+    setImagePreview(localBlobUrl);
+
     setIsUploadingImage(true);
     try {
       const response = await campService.uploadImage(file);
@@ -208,7 +212,9 @@ const AdminCamps = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const finalImageUrl = toPortableImageUrl(data.imageUrl || '');
+      const rawUrl = data.imageUrl?.trim() || '';
+      const cleanedUrl = rawUrl ? resolveImageUrl(rawUrl, rawUrl) : '';
+      const finalImageUrl = toPortableImageUrl(cleanedUrl);
       const campData = {
         name: data.name,
         location: data.location,
@@ -367,8 +373,14 @@ const AdminCamps = () => {
                         <img
                           src={imagePreview}
                           alt="Camp preview"
+                          referrerPolicy="no-referrer"
                           className="w-full max-w-xs h-40 object-cover rounded-xl border border-[var(--color-sand)] dark:border-[#3D3D3D]"
-                          onError={() => { setImagePreview(null); }}
+                          onError={(e) => {
+                            if (e.currentTarget.src !== DEFAULT_CAMP_IMAGE) {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = DEFAULT_CAMP_IMAGE;
+                            }
+                          }}
                         />
                         <button
                           type="button"
@@ -432,11 +444,12 @@ const AdminCamps = () => {
                           {...register('imageUrl')}
                           onChange={(e) => {
                             const nextValue = e.target.value;
-                            setValue('imageUrl', nextValue);
-                            setImagePreview(nextValue ? toAbsoluteImageUrl(nextValue) : null);
+                            setValue('imageUrl', nextValue, { shouldDirty: true, shouldValidate: true });
+                            const resolved = resolveImageUrl(nextValue, '');
+                            setImagePreview(resolved || null);
                           }}
                           className="input-field"
-                          placeholder="Paste image URL"
+                          placeholder="Paste image URL (e.g. Unsplash or direct web link)"
                         />
                       </div>
                     )}
@@ -521,9 +534,16 @@ const AdminCamps = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={resolveImageUrl(camp.imageUrl, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=100')}
+                          src={resolveImageUrl(camp.imageUrl, DEFAULT_CAMP_IMAGE)}
                           alt={camp.name}
+                          referrerPolicy="no-referrer"
                           className="w-12 h-12 rounded-xl object-cover"
+                          onError={(e) => {
+                            if (e.currentTarget.src !== DEFAULT_CAMP_IMAGE) {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = DEFAULT_CAMP_IMAGE;
+                            }
+                          }}
                         />
                         <span className="font-medium text-white">{camp.name}</span>
                       </div>

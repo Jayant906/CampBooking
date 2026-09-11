@@ -1,16 +1,15 @@
 import StarRating from './StarRating';
-import { resolveImageUrl } from '../../services/imageUrl';
+import { resolveImageUrl, DEFAULT_CAMP_IMAGE } from '../../services/imageUrl';
 
 const CampCard = ({ camp, onBook, bookings = [] }) => {
   const hasBookings = bookings && bookings.length > 0;
   const weekendRate = Math.round(Number(camp?.pricePerNight || 0) * 1.25);
   const getOptimizedImageUrl = (url) => {
-    const fallback = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=480&auto=format&fit=crop&q=75';
-    const resolved = resolveImageUrl(url, fallback);
+    const resolved = resolveImageUrl(url, DEFAULT_CAMP_IMAGE);
     if (resolved && resolved.includes('images.unsplash.com')) {
       return resolved.includes('?') 
-        ? resolved.replace(/w=\d+/, 'w=480').concat(resolved.includes('auto=format') ? '' : '&auto=format&fit=crop&q=75')
-        : `${resolved}?w=480&auto=format&fit=crop&q=75`;
+        ? resolved.replace(/w=\d+/, 'w=600')
+        : `${resolved}?w=600&auto=format&fit=crop&q=75`;
     }
     return resolved;
   };
@@ -29,7 +28,14 @@ const CampCard = ({ camp, onBook, bookings = [] }) => {
           alt={camp.name}
           loading="lazy"
           decoding="async"
+          referrerPolicy="no-referrer"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          onError={(e) => {
+            if (e.currentTarget.src !== DEFAULT_CAMP_IMAGE) {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = DEFAULT_CAMP_IMAGE;
+            }
+          }}
         />
         
         {/* Price Tag */}

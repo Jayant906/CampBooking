@@ -7,7 +7,7 @@ import { campService } from '../services/campService';
 import { bookingService } from '../services/bookingService';
 import { couponService } from '../services/couponService';
 import { paymentService } from '../services/paymentService';
-import { resolveImageUrl } from '../services/imageUrl';
+import { resolveImageUrl, DEFAULT_CAMP_IMAGE } from '../services/imageUrl';
 import UpiPaymentModal from '../components/UpiPaymentModal';
 
 // Phone validation rules by country code
@@ -198,7 +198,7 @@ const BookingPage = () => {
     : typeof camp?.amenities === 'string'
       ? camp.amenities.split(',').map((item) => item.trim()).filter(Boolean)
       : [];
-  const campImage = resolveImageUrl(camp?.imageUrl, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800');
+  const campImage = resolveImageUrl(camp?.imageUrl, DEFAULT_CAMP_IMAGE);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -666,7 +666,14 @@ const BookingPage = () => {
                 <img
                   src={campImage}
                   alt={camp.name}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== DEFAULT_CAMP_IMAGE) {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEFAULT_CAMP_IMAGE;
+                    }
+                  }}
                 />
                 <div className="image-text-overlay" />
                 <div className="absolute bottom-4 left-4 right-4">

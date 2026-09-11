@@ -232,8 +232,26 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseResponseCompression();
-app.UseStaticFiles();
 app.UseCors("AllowReactApp");
+
+// Ensure upload directories exist at startup
+var webRoot = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+var uploadsCampsDir = Path.Combine(webRoot, "uploads", "camps");
+if (!Directory.Exists(uploadsCampsDir))
+{
+    Directory.CreateDirectory(uploadsCampsDir);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    }
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
